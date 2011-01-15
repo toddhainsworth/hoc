@@ -11,7 +11,7 @@ int warning(char *s, char *t);
 %token NUMBER
 %left '+' '-'
 %left '*' '/'
-
+%left UNARYMINUS
 
 %%
 
@@ -20,6 +20,7 @@ list:   /* nothing */
         | list expr '\n' { fprintf(stdout, "    %.8g\n", $2 ) ; }
         ;
 expr:    NUMBER { $$ = $1; }
+        | '-' expr %prec UNARYMINUS { $$ = -$2; }
         | expr '+' expr { $$ = $1 + $3; }
         | expr '-' expr { $$ = $1 - $3; }
         | expr '*' expr { $$ = $1 * $3; }
