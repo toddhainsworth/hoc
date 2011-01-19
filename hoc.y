@@ -6,6 +6,7 @@ int yylex();
 int yyerror(char *s);
 
 int warning(char *s, char *t);
+int execerror(char *s, char *t);
 double mem[26];
 %}
 
@@ -57,13 +58,13 @@ expr:    NUMBER
 
 jmp_buf begin;
 
-char *progname;
+char *progname = "hoc";
 int lineno = 1;
 FILE *yyin;
 
 int main(int argc, char **argv)
 {
-    int fpecatch();
+    void fpecatch(int);
 
     FILE *fp = stdin;
     if (argc >= 2)
@@ -92,10 +93,9 @@ int execerror(char *s, char *t)
 
 /* catch floating point exception
  */
-int fpecatch()
+void fpecatch(int f)
 {
     execerror("floating point exception", (char *) 0);
-    return 1;
 }
 
 int yylex() /* int argc, char *argv[]) */
