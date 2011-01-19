@@ -29,8 +29,11 @@ double mem[26];
 
 list:   /* nothing */
         | list '\n'
+        | list ';'
         | list expr '\n' { fprintf(stdout, "    %.8g\n", $2 ) ; }
+        | list expr ';' { fprintf(stdout, "    %.8g\n", $2 ) ; }
         | list error '\n' { yyerrok; }
+        | list error ';' { yyerrok; }
         ;
 expr:    NUMBER
         | VAR { $$ = mem[$1]; }
@@ -115,7 +118,11 @@ int yylex() /* int argc, char *argv[]) */
         yylval.index = c - 'a'; /* ASCII number */
         return VAR;
     }
-    if (c == '\n')
+    if (isupper(c)) {
+        yylval.index = c - 'A' + 26; /* ASCII number */
+        return VAR;
+    }
+    if (c == '\n' || c == ';')
         lineno++;
     return c;
 }
