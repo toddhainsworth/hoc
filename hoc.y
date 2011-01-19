@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <math.h>
 /* for being nuts about compiler warnings */
 int yylex();   
 int yyerror(char *s);
@@ -35,7 +36,7 @@ expr:    NUMBER
         | VAR '=' expr { $$ = mem[$1] = $3; }
         | '+' expr %prec UNARYOPERATOR { $$ = $2; }
         | '-' expr %prec UNARYOPERATOR { $$ = -$2; }
-        | expr '%' expr { $$ = (int) $1 % (int) $3; }
+        | expr '%' expr { $$ = fmod($1, $3); }
         | expr '+' expr { $$ = $1 + $3; }
         | expr '-' expr { $$ = $1 - $3; }
         | expr '*' expr { $$ = $1 * $3; }
