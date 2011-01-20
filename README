@@ -1,14 +1,17 @@
 hoc: Higher Order Calculator
 Originally described in
-The UNIX Programming Environment
+
 Brian Kernighan & Rob Pike
+The UNIX Programming Environment
 Prentice Hall, Englewood Cliffs, NJ (1984)
-Transcribed and updated for ANSI C by Aaron Katz (2010)
+Transcribed and updated for ANSI C by Aaron Katz (2011)
 
 hoc is a simple language for computation.  Its main utility
 is as a teaching tool, demonstrating the construction of a
-reasonably complicated software project and the use of tools
-such as yacc and make (to this venerable list, I add git).
+software project of nontrivial scale and the use of tools
+such as yacc, lex, and make (to this venerable list, I add
+git).
+
 
 In The UNIX Programming Environment, Kernighan & Pike
 develop hoc incrementally, beginning with a very basic
@@ -24,7 +27,6 @@ argument.  Perhaps most importantly, I have adapted the code
 to conform to ANSI C (rather than the "K&R" style used in
 the book and have made the necessary changes to quiet
 warnings issued by gcc's highest warning level.
-
 
 I have prepared this git repository mostly as an exercise
 for myself to help in learning the use of yacc. It is my
