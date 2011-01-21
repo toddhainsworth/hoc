@@ -1,8 +1,15 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -ansi -pedantic
+# CFLAGS=-Wall -Wextra -ansi -pedantic
+CFLAGS=-Wall -Wextra -g
+OBJ=hoc.o math.o init.o symbol.o
+YFLAGS=-d
 
-hoc: hoc.o
-	$(CC) hoc.o -o hoc
+hoc: $(OBJ)
+	$(CC) -o hoc -lm $(OBJ)
+
+hoc.o: hoc.h
+
+init.o symbol.o: hoc.h y.tab.h
 
 clean:
-	rm hoc.o hoc
+	rm $(OBJ) y.tab.h hoc

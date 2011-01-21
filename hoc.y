@@ -1,46 +1,51 @@
 %{
+#include "hoc.h"
 #include <stdio.h>
-#include <math.h>
+#include <math.h> /* fmod() */
+extern double Pow();
 /* for being nuts about compiler warnings */
 int yylex();   
 int yyerror(char *s);
 
 int warning(char *s, char *t);
-int execerror(char *s, char *t);
-double mem[26];
 %}
 
 %union {
     double val;
-    int index;
+    Symbol *sym;
 }
 
 %token <val> NUMBER
-%token <index> VAR
-%type <val> expr
+%token <sym> VAR BLTIN UNDEF
+%type <val> expr asgn
 
 %right '='
 %left '%'
 %left '+' '-'
 %left '*' '/'
 %left UNARYOPERATOR
+%right '^' /* exponentiation */
 
 %%
 
 list:   /* nothing */
         | list '\n'
         | list ';'
+        | list asgn '\n'
+        | list asgn ';'
         | list expr '\n' { fprintf(stdout, "    %.8g\n", $2 ) ; }
         | list expr ';' { fprintf(stdout, "    %.8g\n", $2 ) ; }
         | list error '\n' { yyerrok; }
         | list error ';' { yyerrok; }
         ;
+asgn:    VAR '=' expr { $$ = $1->u.val = $3; $1->type = VAR; }
+        ;
 expr:    NUMBER
-        | VAR { $$ = mem[$1]; }
-        | VAR '=' expr { $$ = mem[$1] = $3; }
-        | '+' expr %prec UNARYOPERATOR { $$ = $2; }
-        | '-' expr %prec UNARYOPERATOR { $$ = -$2; }
-        | expr '%' expr { $$ = fmod($1, $3); }
+        | VAR { if ($1->type == UNDEF)
+                    execerror("undefined variable", $1->name);
+                $$ = $1->u.val; }
+        | asgn
+        | BLTIN '(' expr ')' { $$ = (*($1->u.ptr))($3); }
         | expr '+' expr { $$ = $1 + $3; }
         | expr '-' expr { $$ = $1 - $3; }
         | expr '*' expr { $$ = $1 * $3; }
@@ -49,13 +54,16 @@ expr:    NUMBER
                         execerror("division by zero", "");
                     $$ = $1 / $3;
                     }
+        | expr '^' expr { $$ = Pow($1, $3); }
         | '(' expr ')'  { $$ = $2; }
+        | '+' expr %prec UNARYOPERATOR { $$ = $2; }
+        | '-' expr %prec UNARYOPERATOR { $$ = -$2; }
+        | expr '%' expr { $$ = fmod($1, $3); }
         ;
 
 %%
-
-#include <stdio.h>
-#include <ctype.h>
+/* end of grammar */
+#include <ctype.h> /* isdigit(), isalpha(), isalnum */
 #include <signal.h> /* for error handling */
 #include <setjmp.h>
 
@@ -64,10 +72,10 @@ jmp_buf begin;
 char *progname = "hoc";
 int lineno = 1;
 FILE *yyin;
+static void fpecatch();
 
 int main(int argc, char **argv)
 {
-    void fpecatch(int);
 
     FILE *fp = stdin;
     if (argc >= 2)
@@ -76,6 +84,7 @@ int main(int argc, char **argv)
 
     setjmp(begin);
     signal(SIGFPE, fpecatch);
+    init();
     yyparse();
     fclose(fp);
 
@@ -96,7 +105,7 @@ int execerror(char *s, char *t)
 
 /* catch floating point exception
  */
-void fpecatch(int f)
+void fpecatch()
 {
     execerror("floating point exception", (char *) 0);
 }
@@ -114,13 +123,19 @@ int yylex() /* int argc, char *argv[]) */
         fscanf(yyin, "%lf", &yylval.val);
         return NUMBER;
     }
-    if (islower(c)) {
-        yylval.index = c - 'a'; /* ASCII number */
-        return VAR;
-    }
-    if (isupper(c)) {
-        yylval.index = c - 'A' + 26; /* ASCII number */
-        return VAR;
+    if (isalpha(c)) {
+        Symbol *s;
+        char sbuf[100];
+        char *p = sbuf;
+        do {
+            *p++ = c;
+        } while ((c = getchar()) != EOF && isalnum(c));
+        ungetc(c, stdin);
+        *p = '\0';
+        if ((s=lookup(sbuf)) == 0)
+            s = install(sbuf, UNDEF, 0.0);
+        yylval.sym = s;
+        return s->type == UNDEF ? VAR : s->type;
     }
     if (c == '\n' || c == ';')
         lineno++;
