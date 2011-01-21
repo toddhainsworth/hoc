@@ -10,7 +10,7 @@ typedef struct Symbol { /* symbol table entry */
     struct Symbol *next;
 } Symbol;
 Symbol *install(char *s, int t, double d);
-Symbol *lookup(char *s);
+Symbol *lookup(char *s, unsigned int n);
 int execerror(char *s, char *t);
 void init();
 #endif /* _HOC_H */

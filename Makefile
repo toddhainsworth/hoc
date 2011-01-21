@@ -12,4 +12,4 @@ hoc.o: hoc.h
 init.o symbol.o: hoc.h y.tab.h
 
 clean:
-	rm $(OBJ) y.tab.h hoc
+	rm -f $(OBJ) y.tab.h hoc

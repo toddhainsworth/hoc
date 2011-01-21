@@ -2,12 +2,14 @@
 #include "hoc.h"
 #include <stdio.h>
 #include <math.h> /* fmod() */
+#define MAX_VAR_SIZE 100
 extern double Pow();
 /* for being nuts about compiler warnings */
 int yylex();   
 int yyerror(char *s);
 
 int warning(char *s, char *t);
+
 %}
 
 %union {
@@ -125,14 +127,14 @@ int yylex() /* int argc, char *argv[]) */
     }
     if (isalpha(c)) {
         Symbol *s;
-        char sbuf[100];
+        char sbuf[MAX_VAR_SIZE];
         char *p = sbuf;
         do {
             *p++ = c;
         } while ((c = getchar()) != EOF && isalnum(c));
         ungetc(c, stdin);
         *p = '\0';
-        if ((s=lookup(sbuf)) == 0)
+        if ((s=lookup(sbuf, MAX_VAR_SIZE)) == 0)
             s = install(sbuf, UNDEF, 0.0);
         yylval.sym = s;
         return s->type == UNDEF ? VAR : s->type;
