@@ -2,7 +2,9 @@
 #include "y.tab.h"
 #include <math.h>
 
-extern double Log(), Log10(), Exp(), Sqrt(), integer();
+extern double Log(double), Log10(double), Exp(double);
+extern double Sqrt(double), integer(double);
+
 static struct {
     char *name;
     double cval;
@@ -17,17 +19,17 @@ static struct {
 
 static struct {
     char *name;
-    double (*func)();
+    double (*func)(double);
 } builtins[] = {
-    {"sin", sin},
-    {"cos", cos},
-    {"atan", atan},
-    {"log", Log},
+    {"sin",   sin},
+    {"cos",   cos},
+    {"atan",  atan},
+    {"log",   Log},
     {"log10", Log10},
-    {"exp", Exp},
-    {"sqrt", Sqrt},
-    {"int", integer},
-    {"abs", fabs},
+    {"exp",   Exp},
+    {"sqrt",  Sqrt},
+    {"int",   integer},
+    {"abs",   fabs},
     {0, 0}
 };
 

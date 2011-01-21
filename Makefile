@@ -1,6 +1,5 @@
 CC=gcc
-# CFLAGS=-Wall -Wextra -ansi -pedantic
-CFLAGS=-Wall -Wextra -g
+CFLAGS=-Wall -Wextra -ansi -pedantic -g
 OBJ=hoc.o math.o init.o symbol.o
 YFLAGS=-d
 

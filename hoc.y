@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h> /* fmod() */
 #define MAX_VAR_SIZE 100
-extern double Pow();
+extern double Pow(double, double);
 /* for being nuts about compiler warnings */
 int yylex();   
 int yyerror(char *s);
@@ -74,7 +74,7 @@ jmp_buf begin;
 char *progname = "hoc";
 int lineno = 1;
 FILE *yyin;
-static void fpecatch();
+static void fpecatch(int);
 
 int main(int argc, char **argv)
 {
@@ -107,7 +107,7 @@ int execerror(char *s, char *t)
 
 /* catch floating point exception
  */
-void fpecatch()
+void fpecatch(int f)
 {
     execerror("floating point exception", (char *) 0);
 }

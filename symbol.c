@@ -19,7 +19,7 @@ char *emalloc(unsigned int n)
 {
     char *p;
 
-    p = malloc(n);
+    p = (char *) malloc(n);
     if (p == 0)
         execerror("out of memory", (char *) 0);
     return p;
