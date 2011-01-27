@@ -5,7 +5,7 @@
 
 static Symbol *symlist = 0; /* symbol table; linked list */
 
-Symbol *lookup(char *s, unsigned int n)
+Symbol *lookup(char *s, size_t n)
 {
     Symbol *sp;
     for (sp = symlist; sp != (Symbol *) 0; sp = sp->next)

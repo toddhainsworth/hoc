@@ -2,7 +2,7 @@
 #include "hoc.h"
 #include <stdio.h>
 #include <math.h> /* fmod() */
-#define MAX_VAR_SIZE 100
+#define MAX_VAR_NAME_LENGTH 100
 extern double Pow(double, double);
 /* for being nuts about compiler warnings */
 int yylex();   
@@ -40,7 +40,14 @@ list:   /* nothing */
         | list error '\n' { yyerrok; }
         | list error ';' { yyerrok; }
         ;
-asgn:    VAR '=' expr { $$ = $1->u.val = $3; $1->type = VAR; }
+asgn:    VAR '=' expr {
+                    if (is_reserved_variable($1->name)) {
+                        execerror("reserved variable", $1->name);
+                    } else {
+                        $$ = $1->u.val = $3;
+                        $1->type = VAR;
+                    }
+                }
         ;
 expr:    NUMBER
         | VAR { if ($1->type == UNDEF)
@@ -55,7 +62,7 @@ expr:    NUMBER
                     if ( $3 == 0.0 )
                         execerror("division by zero", "");
                     $$ = $1 / $3;
-                    }
+                }
         | expr '^' expr { $$ = Pow($1, $3); }
         | '(' expr ')'  { $$ = $2; }
         | '+' expr %prec UNARYOPERATOR { $$ = $2; }
@@ -127,14 +134,14 @@ int yylex() /* int argc, char *argv[]) */
     }
     if (isalpha(c)) {
         Symbol *s;
-        char sbuf[MAX_VAR_SIZE];
+        char sbuf[MAX_VAR_NAME_LENGTH];
         char *p = sbuf;
         do {
             *p++ = c;
         } while ((c = getchar()) != EOF && isalnum(c));
         ungetc(c, stdin);
         *p = '\0';
-        if ((s=lookup(sbuf, MAX_VAR_SIZE)) == 0)
+        if ((s=lookup(sbuf, MAX_VAR_NAME_LENGTH)) == 0)
             s = install(sbuf, UNDEF, 0.0);
         yylval.sym = s;
         return s->type == UNDEF ? VAR : s->type;
