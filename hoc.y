@@ -54,7 +54,10 @@ expr:    NUMBER
                     execerror("undefined variable", $1->name);
                 $$ = $1->u.val; }
         | asgn
+        /* cheap hack to get 0 and 2 argument fns */
+        | BLTIN '(' ')' { $$ = (*($1->u.ptr0))(); }
         | BLTIN '(' expr ')' { $$ = (*($1->u.ptr))($3); }
+        | BLTIN '(' expr ',' expr ')' { $$ = (*($1->u.ptr2))($3, $5); }
         | expr '+' expr { $$ = $1 + $3; }
         | expr '-' expr { $$ = $1 - $3; }
         | expr '*' expr { $$ = $1 * $3; }

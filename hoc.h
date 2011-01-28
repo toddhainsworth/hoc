@@ -6,7 +6,9 @@ typedef struct Symbol { /* symbol table entry */
     short type; /* VAR, BLTIN, UNDEF */
     union {
         double val;     /* if VAR */
+        double (*ptr0)(); /* if BLTIN */
         double (*ptr)(double); /* if BLTIN */
+        double (*ptr2)(double, double); /* if BLTIN */
     } u;
     struct Symbol *next;
 } Symbol;
