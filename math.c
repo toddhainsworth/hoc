@@ -11,7 +11,7 @@ double Exp(double x)
 
 double Log(double x)
 {
-    return errcheck(log(x), "exp");
+    return errcheck(log(x), "log");
 }
 
 double Log10(double x)
