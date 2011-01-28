@@ -1,8 +1,8 @@
 #include "hoc.h"
 #include "y.tab.h"
 #include <math.h>
-#include <stdlib.h> /* rand() */
-#include <string.h> /* strcmp() (BAD!) */
+#include <stdlib.h> /* drand48() */
+#include <string.h> /* strncmp() */
 
 extern double Log(double), Log10(double), Exp(double);
 extern double Sqrt(double), integer(double);
@@ -59,7 +59,7 @@ int is_reserved_variable(char *s)
 {
     int i;
     for (i = 0; consts[i].name; i++)
-        if (!strcmp(s, consts[i].name))
+        if (!strncmp(s, consts[i].name, sizeof(consts[i].name)/sizeof(char)))
             return 1;
     return 0;
 }

@@ -1,4 +1,4 @@
-#include <string.h> /* strncmp(), strcpy() */
+#include <string.h> /* strncmp(), strncpy() */
 #include <stdlib.h> /* malloc() */
 #include "hoc.h"
 #include "y.tab.h"
@@ -31,8 +31,9 @@ Symbol *install(char *s, int t, double d)
     Symbol *sp;
 
     sp = (Symbol *) emalloc(sizeof(Symbol));
-    sp->name = emalloc(strlen(s) + 1); /* +1 for '\0' */
-    strcpy(sp->name, s); /* this is ok b/c we just allocated the buf */
+    sp->name_len = strlen(s) + 1; /* +1 for '\0' */
+    sp->name = emalloc(sp->name_len);
+    strncpy(sp->name, s, sp->name_len);
     sp->type = t;
     sp->u.val = d;
     sp->next = symlist; /* put at front of list */

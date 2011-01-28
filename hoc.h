@@ -3,6 +3,8 @@
 #include <stdlib.h>
 typedef struct Symbol { /* symbol table entry */
     char *name;
+    /* length of variable name, INCLUDING '\0' */
+    size_t name_len;
     short type; /* VAR, BLTIN, UNDEF */
     union {
         double val;     /* if VAR */
