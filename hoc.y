@@ -141,8 +141,8 @@ int yylex() /* int argc, char *argv[]) */
         char *p = sbuf;
         do {
             *p++ = c;
-        } while ((c = getchar()) != EOF && isalnum(c));
-        ungetc(c, stdin);
+        } while ((c = fgetc(yyin)) != EOF && isalnum(c));
+        ungetc(c, yyin);
         *p = '\0';
         if ((s=lookup(sbuf, MAX_VAR_NAME_LENGTH)) == 0)
             s = install(sbuf, UNDEF, 0.0);
