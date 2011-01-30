@@ -7,7 +7,11 @@ int yyerror(char *s);
 
 int warning(char *s, char *t);
 int execerror(char *s, char *t);
-double mem[26];
+double mem[52];
+
+const int PREV_INDEX = 26 + 'P' - 'A';
+
+
 %}
 
 %union {
@@ -36,20 +40,20 @@ list:   /* nothing */
         | list error ';' { yyerrok; }
         ;
 expr:    NUMBER
-        | VAR { $$ = mem[$1]; }
-        | VAR '=' expr { $$ = mem[$1] = $3; }
-        | '+' expr %prec UNARYOPERATOR { $$ = $2; }
-        | '-' expr %prec UNARYOPERATOR { $$ = -$2; }
-        | expr '%' expr { $$ = fmod($1, $3); }
-        | expr '+' expr { $$ = $1 + $3; }
-        | expr '-' expr { $$ = $1 - $3; }
-        | expr '*' expr { $$ = $1 * $3; }
+        | VAR { $$ = mem[PREV_INDEX] = mem[$1]; }
+        | VAR '=' expr { $$ = mem[PREV_INDEX] = mem[$1] = $3; }
+        | '+' expr %prec UNARYOPERATOR { $$ = mem[PREV_INDEX] = $2; }
+        | '-' expr %prec UNARYOPERATOR { $$ = mem[PREV_INDEX] = -$2; }
+        | expr '%' expr { $$ = mem[PREV_INDEX] = fmod($1, $3); }
+        | expr '+' expr { $$ = mem[PREV_INDEX] = $1 + $3; }
+        | expr '-' expr { $$ = mem[PREV_INDEX] = $1 - $3; }
+        | expr '*' expr { $$ = mem[PREV_INDEX] = $1 * $3; }
         | expr '/' expr { 
                     if ( $3 == 0.0 )
                         execerror("division by zero", "");
-                    $$ = $1 / $3;
+                    $$ = mem[PREV_INDEX] = $1 / $3;
                     }
-        | '(' expr ')'  { $$ = $2; }
+        | '(' expr ')'  { $$ = mem[PREV_INDEX] = $2; }
         ;
 
 %%
