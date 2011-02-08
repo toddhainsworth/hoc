@@ -26,7 +26,7 @@ typedef int (*Inst)(); /* machine instruction */
 #define STOP (Inst) 0
 extern Inst prog[];
 extern void eval(), print();
-extern void add(), sub(), mul();
+extern void mod(), add(), sub(), mul();
 extern void div_(); /* stdlib.h defines div */
 extern void negate(), power(), assign(), bltin();
 extern void varpush(), constpush();

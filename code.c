@@ -88,6 +88,16 @@ void mul() /* multiply top two elems on stack */
     push(d1);
 }
 
+void mod() /* a mod b for top two elems on stack*/
+{
+    Datum d1, d2;
+    d2 = pop();
+    d1 = pop();
+    d1.val = fmod(d1.val, d2.val);
+    push(d1);
+}
+
+
 void div_() /* multiply top two elems on stack */
 {
     Datum d1, d2;

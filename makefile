@@ -6,8 +6,6 @@ OBJ=hoc.o code.o math.o init.o symbol.o
 hoc: $(OBJ)
 	$(CC) -o hoc -lm $(OBJ)
 
-# y.tab.h: hoc.o
-
 hoc.o code.o init.o symbol.o: hoc.h
 
 code.o init.o symbol.o: y.tab.h

@@ -52,18 +52,14 @@ asgn:    VAR '=' expr {
                 }
         ;
 expr:    NUMBER { code2(constpush, (Inst) $1); }
-        | VAR {
-        /* if ($1->type == UNDEF)
-                    execerror("undefined variable", $1->name);
-                 */
-                 code3(varpush, (Inst) $1, eval);
-              }
+        | VAR { code3(varpush, (Inst) $1, eval); }
         | asgn
         /* cheap hack to get 0 and 2 argument fns
         | BLTIN '(' ')' { $$ = (*($1->u.ptr0))(); }
         | BLTIN '(' expr ',' expr ')' { $$ = (*($1->u.ptr2))($3, $5); }
         */
         | BLTIN '(' expr ')' { code2(bltin, (Inst) $1->u.ptr); }
+        | expr '%' expr { code(mod); }
         | expr '+' expr { code(add); }
         | expr '-' expr { code(sub); }
         | expr '*' expr { code(mul); }
