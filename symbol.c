@@ -1,7 +1,6 @@
 #include <string.h> /* strncmp(), strncpy() */
 #include <stdlib.h> /* malloc() */
 #include "hoc.h"
-#include "y.tab.h"
 
 static Symbol *symlist = 0; /* symbol table; linked list */
 

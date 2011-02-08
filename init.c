@@ -1,7 +1,6 @@
 #include "hoc.h"
 #include "y.tab.h"
 #include <math.h>
-#include <stdlib.h> /* drand48() */
 #include <string.h> /* strncmp() */
 
 extern double Log(double), Log10(double), Exp(double);

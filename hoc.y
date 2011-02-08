@@ -43,13 +43,12 @@ list:   /* nothing */
         */
         ;
 asgn:    VAR '=' expr {
-                /*
-                    if (is_reserved_variable($1->name)) {
-                        execerror("reserved variable", $1->name);
+                    Symbol *s = (Symbol *) $1;
+                    if (is_reserved_variable(s->name)) {
+                        execerror("reserved variable", s->name);
                     } else {
-                    */
                         code3(varpush, (Inst) $1, assign); 
-                    /* } */
+                    }
                 }
         ;
 expr:    NUMBER { code2(constpush, (Inst) $1); }
