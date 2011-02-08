@@ -25,13 +25,17 @@ extern Datum pop();
 typedef int (*Inst)(); /* machine instruction */
 #define STOP (Inst) 0
 extern Inst prog[];
-extern eval(), print();
-extern add(), sub(), mul();
-extern div_(); /* stdlib.h defines div */
-extern negate(), power(), assign(), bltin();
-extern varpush(), constpush();
+extern void eval(), print();
+extern void add(), sub(), mul();
+extern void div_(); /* stdlib.h defines div */
+extern void negate(), power(), assign(), bltin();
+extern void varpush(), constpush();
+
+Inst *code();
 
 int execerror(char *s, char *t);
 void init();
+void initcode();
+void execute(Inst *p);
 int is_reserved_variable(char *s);
 #endif /* _HOC_H */

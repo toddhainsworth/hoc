@@ -32,9 +32,10 @@ static struct {
     {"sqrt",  Sqrt},
     {"int",   integer},
     {"abs",   fabs},
-    /* terrible abuse of C's generosity */
+    /* terrible abuse of C's generosity
     {"rand", drand48},
     {"atan2", atan2},
+    */
     {0, 0}
 };
 

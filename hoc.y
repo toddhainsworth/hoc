@@ -94,9 +94,9 @@ static void fpecatch(int);
 int main(int argc, char **argv)
 {
 
+    FILE *fp;
     progname = argv[0];
-
-    FILE *fp = stdin;
+    fp = stdin;
     if (argc >= 2)
         fp = fopen(argv[1], "r");
     yyin = fp;

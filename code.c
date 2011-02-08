@@ -12,13 +12,13 @@ Inst prog[NPROG]; /* the machine */
 Inst *progp; /* the next free spot on the stack */
 Inst *pc; /* program counter during execution */
 
-initcode()
+void initcode()
 {
     stackp = stack;
     progp = prog;
 }
 
-push(Datum d) /* push d onto stack */
+void push(Datum d) /* push d onto stack */
 {
     if (stackp >= &stack[NSTACK])
         execerror("stack overflow", (char *) 0);
@@ -41,27 +41,27 @@ Inst *code(Inst f) /* install one instruction or operand */
     return oprogp;
 }
 
-execute(Inst *p)
+void execute(Inst *p)
 {
     for (pc = p; *pc != STOP; )
         (*(*pc++))();
 }
 
-constpush() /* push constant onto stack */
+void constpush() /* push constant onto stack */
 {
     Datum d;
     d.val = ((Symbol *)*pc++)->u.val;
     push(d);
 }
 
-varpush() /* push variable onto stack */
+void varpush() /* push variable onto stack */
 {
     Datum d;
     d.sym = (Symbol *)(*pc++);
     push(d);
 }
 
-add() /* add top two elems on stack */
+void add() /* add top two elems on stack */
 {
     Datum d1, d2;
     d2 = pop();
@@ -70,7 +70,7 @@ add() /* add top two elems on stack */
     push(d1);
 }
 
-sub() /* subtract top two elems on stack */
+void sub() /* subtract top two elems on stack */
 {
     Datum d1, d2;
     d2 = pop();
@@ -79,7 +79,7 @@ sub() /* subtract top two elems on stack */
     push(d1);
 }
 
-mul() /* multiply top two elems on stack */
+void mul() /* multiply top two elems on stack */
 {
     Datum d1, d2;
     d2 = pop();
@@ -88,7 +88,7 @@ mul() /* multiply top two elems on stack */
     push(d1);
 }
 
-div_() /* multiply top two elems on stack */
+void div_() /* multiply top two elems on stack */
 {
     Datum d1, d2;
     d2 = pop();
@@ -97,7 +97,7 @@ div_() /* multiply top two elems on stack */
     push(d1);
 }
 
-power() /* multiply top two elems on stack */
+void power() /* multiply top two elems on stack */
 {
     double x;
     Datum d1, d2;
@@ -108,7 +108,7 @@ power() /* multiply top two elems on stack */
     push(d1);
 }
 
-negate() /* negate top elem on stack */
+void negate() /* negate top elem on stack */
 {
     Datum d1;
     d1 = pop();
@@ -116,15 +116,10 @@ negate() /* negate top elem on stack */
     push(d1);
 }
 
-noop()
-{
-}
+void noop()
+{ }
 
-
-
-
-
-eval() /* evaluate variable on stack */
+void eval() /* evaluate variable on stack */
 {
     Datum d;
     d = pop();
@@ -134,7 +129,7 @@ eval() /* evaluate variable on stack */
     push(d);
 }
 
-assign() /* assign top value to next value */
+void assign() /* assign top value to next value */
 {
     Datum d1, d2;
     d1 = pop();
@@ -146,14 +141,14 @@ assign() /* assign top value to next value */
     push(d2);
 }
 
-print() /* pop top value from stack, print it */
+void print() /* pop top value from stack, print it */
 {
     Datum d;
     d = pop();
     printf("    %.8g\n", d.val);
 }
 
-bltin()
+void bltin()
 {
     Datum d;
     d = pop();
