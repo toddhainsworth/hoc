@@ -15,7 +15,7 @@ typedef struct Symbol { /* symbol table entry */
     } u;
     struct Symbol *next;
 } Symbol;
-Symbol *install(char *s, int t, double d);
+Symbol *install(char *s, short t, double d);
 Symbol *lookup(char *s, size_t n);
 typedef union Datum { /* interpreter stack type */
     double val;

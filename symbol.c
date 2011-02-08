@@ -25,7 +25,7 @@ char *emalloc(unsigned int n)
 }
 
 /* install s in symbol table */
-Symbol *install(char *s, int t, double d)
+Symbol *install(char *s, short t, double d)
 {
     Symbol *sp;
 
