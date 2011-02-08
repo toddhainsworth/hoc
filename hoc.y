@@ -8,12 +8,14 @@
 
 extern double Pow(double, double);
 /* for being nuts about compiler warnings */
-int yylex();   
+int yylex(); 
 int yyerror(char *s);
 
 int warning(char *s, char *t);
 
 %}
+
+/* y.tab.h content comes from here */
 
 %union {
     Symbol *sym; /* symbol table pointer */
@@ -42,15 +44,19 @@ list:   /* nothing */
         | list error ';' { yyerrok; }
         */
         ;
+
 asgn:    VAR '=' expr {
                     Symbol *s = (Symbol *) $1;
                     if (is_reserved_variable(s->name)) {
                         execerror("reserved variable", s->name);
                     } else {
-                        code3(varpush, (Inst) $1, assign); 
+                        code(varpush);
+                        code((Inst) $1);
+                        code(assign);
                     }
                 }
         ;
+
 expr:    NUMBER { code2(constpush, (Inst) $1); }
         | VAR { code3(varpush, (Inst) $1, eval); }
         | asgn

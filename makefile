@@ -1,14 +1,17 @@
 CC=gcc
 YFLAGS=-d
-CFLAGS=-g #-Wall -Wextra -ansi -pedantic
+CFLAGS=-g -Wall -Wextra # -ansi -pedantic
 OBJ=hoc.o code.o math.o init.o symbol.o
 
-hoc: $(OBJ)
+hoc: y.tab.h $(OBJ)
 	$(CC) -o hoc -lm $(OBJ)
 
-hoc.o code.o init.o symbol.o: hoc.h
+y.tab.h: hoc.o
+	$(YACC) $(YFLAGS) hoc.y
 
-code.o init.o symbol.o: y.tab.h
+hoc.o: hoc.h
+
+code.o init.o symbol.o: y.tab.h hoc.h
 
 clean:
-	rm -f $(OBJ) y.tab.h hoc core
+	rm -f $(OBJ) y.tab.[ch] hoc core

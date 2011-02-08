@@ -49,8 +49,18 @@ void execute(Inst *p)
 
 void constpush() /* push constant onto stack */
 {
+    /* terse version */
+    /* Datum d; d.val = ((Symbol *)*pc++)->u.val; */
+
     Datum d;
-    d.val = ((Symbol *)*pc++)->u.val;
+    Symbol *s;
+    double x;
+
+    s = (Symbol *) *pc;
+    pc += 1;
+
+    x = s->u.val;
+    d.val = x;
     push(d);
 }
 
