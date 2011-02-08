@@ -32,9 +32,6 @@ static struct {
     {"sqrt",  Sqrt},
     {"int",   integer},
     {"abs",   fabs},
-    /* terrible abuse of C's generosity */
-    {"atan2", atan2},
-    {"rand", drand48},
     {0, 0}
 };
 
