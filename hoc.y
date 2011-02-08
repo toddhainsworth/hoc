@@ -35,16 +35,35 @@ list:   /* nothing */
         | list asgn '\n' { code2(pop, STOP); return 1; }
         | list expr '\n' { code2(print, STOP); return 1; }
         | list error '\n' { yyerrok; }
+        /*  semicolon-terminated expressions
+        | list ';'
+        | list asgn ';'
+        | list expr ';' { fprintf(stdout, "    %.8g\n", $2 ) ; }
+        | list error ';' { yyerrok; }
+        */
         ;
 asgn:    VAR '=' expr {
+                /*
+                    if (is_reserved_variable($1->name)) {
+                        execerror("reserved variable", $1->name);
+                    } else {
+                    */
                         code3(varpush, (Inst) $1, assign); 
+                    /* } */
                 }
         ;
 expr:    NUMBER { code2(constpush, (Inst) $1); }
         | VAR {
+        /* if ($1->type == UNDEF)
+                    execerror("undefined variable", $1->name);
+                 */
                  code3(varpush, (Inst) $1, eval);
               }
         | asgn
+        /* cheap hack to get 0 and 2 argument fns
+        | BLTIN '(' ')' { $$ = (*($1->u.ptr0))(); }
+        | BLTIN '(' expr ',' expr ')' { $$ = (*($1->u.ptr2))($3, $5); }
+        */
         | BLTIN '(' expr ')' { code2(bltin, (Inst) $1->u.ptr); }
         | expr '+' expr { code(add); }
         | expr '-' expr { code(sub); }
@@ -54,6 +73,9 @@ expr:    NUMBER { code2(constpush, (Inst) $1); }
         | '(' expr ')'
         | '+' expr %prec UNARYOPERATOR /* do nothing */
         | '-' expr %prec UNARYOPERATOR { code(negate); }
+        /*
+        | expr '%' expr { $$ = fmod($1, $3); }
+        */
         ;
 
 %%
