@@ -12,6 +12,7 @@ int yylex();
 int yyerror(char *s);
 
 int warning(char *s, char *t);
+int follow(char expect, int ifyes, int ifno);
 
 %}
 
@@ -22,19 +23,24 @@ int warning(char *s, char *t);
     Inst *inst; /* (stack) machine instruction */
 }
 
-%token <sym> NUMBER VAR BLTIN UNDEF
+%token <sym> NUMBER PRINT VAR BLTIN UNDEF WHILE IF ELSE
+%type <inst> stmt asgn expr stmtlist cond while if end
 %right '='
+%left OR
+%left AND
+%left GT GE LT LE EQ NE
 %left '%'
 %left '+' '-'
 %left '*' '/'
-%left UNARYOPERATOR
+%left UNARYOPERATOR NOT
 %right '^' /* exponentiation */
 
 %%
 
-list:   /* nothing */
+list:     /* nothing */
         | list '\n'
         | list asgn '\n' { code2(pop, STOP); return 1; }
+        | list stmt '\n' { code(STOP); return 1; }
         | list expr '\n' { code2(print, STOP); return 1; }
         | list error '\n' { yyerrok; }
         /*  semicolon-terminated expressions
@@ -45,35 +51,82 @@ list:   /* nothing */
         */
         ;
 
-asgn:    VAR '=' expr {
+asgn:    VAR '=' expr { $$ = $3;
                     Symbol *s = (Symbol *) $1;
                     if (is_reserved_variable(s->name)) {
                         execerror("reserved variable", s->name);
                     } else {
+                        /*
                         code(varpush);
                         code((Inst) $1);
                         code(assign);
+                        */
+                        code3(varpush, (Inst) $1, assign);
                     }
                 }
         ;
 
-expr:    NUMBER { code2(constpush, (Inst) $1); }
-        | VAR { code3(varpush, (Inst) $1, eval); }
+stmt:     expr { code(pop); }
+        | PRINT expr { code(prexpr); $$ = $2; }
+        | while cond stmt end {
+                ($1)[1] = (Inst) $3; /* body of loop */
+                ($1)[2] = (Inst) $4; /* end, if cond fails */
+            }
+        | if cond stmt end { /* else-less if */
+                ($1)[1] = (Inst) $3; /* then part */
+                ($1)[3] = (Inst) $4; /* end, if cond fails */
+            }
+        | if cond stmt end ELSE stmt end { /* if with else */
+                ($1)[1] = (Inst) $3; /* then part */
+                ($1)[2] = (Inst) $6; /* else part */
+                ($1)[3] = (Inst) $7; /* end, if cond fails */
+            }
+        | '{' stmtlist '}' { $$ = $2; }
+        ;
+
+cond:    '(' expr ')' { code(STOP); $$ = $2; }
+        ;
+
+while:    WHILE { $$ = code3(whilecode, STOP, STOP); }
+        ;
+
+if:       IF { $$ = code(ifcode); code3(STOP, STOP, STOP); }
+        ;
+
+end:      /* nothing */ { code(STOP); $$ = progp; }
+        ;
+
+stmtlist: /* nothing */ { $$ = progp; }
+        | stmtlist '\n'
+        | stmtlist stmt
+        ;
+
+expr:     NUMBER { $$ = code2(constpush, (Inst) $1); }
+        | VAR { $$ = code3(varpush, (Inst) $1, eval); }
         | asgn
         /* cheap hack to get 0 and 2 argument fns
         | BLTIN '(' ')' { $$ = (*($1->u.ptr0))(); }
         | BLTIN '(' expr ',' expr ')' { $$ = (*($1->u.ptr2))($3, $5); }
         */
-        | BLTIN '(' expr ')' { code2(bltin, (Inst) $1->u.ptr); }
+        | BLTIN '(' expr ')' { $$ = $3; code2(bltin, (Inst) $1->u.ptr); }
+        | '(' expr ')' { $$ = $2; }
         | expr '%' expr { code(mod); }
         | expr '+' expr { code(add); }
         | expr '-' expr { code(sub); }
         | expr '*' expr { code(mul); }
         | expr '/' expr { code(div_); }
         | expr '^' expr { code(power); }
-        | '(' expr ')'
-        | '+' expr %prec UNARYOPERATOR /* do nothing */
-        | '-' expr %prec UNARYOPERATOR { code(negate); }
+        | '+' expr %prec UNARYOPERATOR { $$ = $2; }
+        | '-' expr %prec UNARYOPERATOR { $$ = $2;  code(negate); }
+        | expr GT expr { code(gt); }
+        | expr GE expr { code(ge); }
+        | expr LT expr { code(lt); }
+        | expr LE expr { code(le); }
+        | expr EQ expr { code(eq); }
+        | expr NE expr { code(ne); }
+        | expr AND expr { code(and); }
+        | expr OR expr { code(or); }
+        | NOT expr { $$ = $2; code(not); }
         /*
         | expr '%' expr { $$ = fmod($1, $3); }
         */
@@ -99,7 +152,10 @@ int main(int argc, char **argv)
     progname = argv[0];
     fp = stdin;
     if (argc >= 2)
-        fp = fopen(argv[1], "r");
+        if (!(fp = fopen(argv[1], "r")) ) {
+            fprintf(stderr, "file not found: %s\n", argv[1]);
+            exit(1);
+        }
     yyin = fp;
 
     init();
@@ -146,6 +202,7 @@ int yylex() /* int argc, char *argv[]) */
         yylval.sym = install("", NUMBER, d);
         return NUMBER;
     }
+
     if (isalpha(c)) {
         Symbol *s;
         char sbuf[MAX_VAR_NAME_LENGTH];
@@ -160,9 +217,26 @@ int yylex() /* int argc, char *argv[]) */
         yylval.sym = s;
         return s->type == UNDEF ? VAR : s->type;
     }
-    if (c == '\n' || c == ';')
-        lineno++;
-    return c;
+
+    switch (c) {
+        case '>': return follow('=', GE, GT);
+        case '<': return follow('=', LE, LT);
+        case '=': return follow('=', EQ, '=');
+        case '!': return follow('=', NE, NOT);
+        case '|': return follow('|', OR, '|');
+        case '&': return follow('&', AND, '&');
+        case '\n': lineno++; return '\n';
+        default:  return c;
+    }
+}
+
+int follow(char expect, int ifyes, int ifno) /* look ahead for >=, etc. */
+{
+    int c = fgetc(yyin);
+    if (c == expect)
+        return ifyes;
+    ungetc(c, yyin);
+    return ifno;
 }
 
 int yyerror(char *s)

@@ -24,12 +24,14 @@ typedef union Datum { /* interpreter stack type */
 extern Datum pop();
 typedef int (*Inst)(); /* machine instruction */
 #define STOP (Inst) 0
-extern Inst prog[];
-extern void eval(), print();
+extern Inst prog[], *progp, *code();
+extern void eval(), print(), prexpr();
 extern void mod(), add(), sub(), mul();
 extern void div_(); /* stdlib.h defines div */
 extern void negate(), power(), assign(), bltin();
 extern void varpush(), constpush();
+extern void gt(), lt(), eq(), ge(), le(), ne(), and(), or(), not();
+extern void ifcode(), whilecode();
 
 Inst *code();
 
