@@ -13,6 +13,8 @@ int yyerror(char *s);
 
 int warning(char *s, char *t);
 int follow(char expect, int ifyes, int ifno);
+static void fpecatch(int f);
+static void interrupt_catch(int f);
 
 %}
 
@@ -143,7 +145,6 @@ jmp_buf begin;
 char *progname = "hoc";
 int lineno = 1;
 FILE *yyin;
-static void fpecatch(int);
 
 int main(int argc, char **argv)
 {
@@ -161,6 +162,7 @@ int main(int argc, char **argv)
     init();
     setjmp(begin);
     signal(SIGFPE, fpecatch);
+    signal(SIGINT, interrupt_catch);
     for (initcode(); yyparse(); initcode())
         execute(prog);
 
@@ -182,9 +184,18 @@ int execerror(char *s, char *t)
 
 /* catch floating point exception
  */
-void fpecatch(int f)
+static void fpecatch(int f)
 {
     execerror("floating point exception", (char *) 0);
+}
+
+static void interrupt_catch(int f)
+{
+    /*
+     * fputc('\n', stderr);
+     * print_symbol_table();
+     */
+    execerror("BREAK!", (char *) 0);
 }
 
 int yylex() /* int argc, char *argv[]) */

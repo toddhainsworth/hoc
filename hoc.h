@@ -1,6 +1,6 @@
 #ifndef _HOC_H
 #define _HOC_H
-#include <stdlib.h>
+#include <stdlib.h> /* size_t */
 typedef struct Symbol { /* symbol table entry */
     char *name;
     size_t name_len; /* length of variable name, INCLUDING '\0' */
@@ -15,6 +15,7 @@ typedef struct Symbol { /* symbol table entry */
     } u;
     struct Symbol *next;
 } Symbol;
+void print_symbol_table();
 Symbol *install(char *s, short t, double d);
 Symbol *lookup(char *s, size_t n);
 typedef union Datum { /* interpreter stack type */

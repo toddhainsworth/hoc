@@ -9,8 +9,10 @@ static Datum *stackp; /* next free spot on stack */
 
 #define NPROG 2000
 Inst prog[NPROG]; /* the machine */
-Inst *progp; /* the next free spot on the stack */
+Inst *progp; /* the next free spot on the machine */
 Inst *pc; /* program counter during execution */
+
+void simple_print_machine();
 
 void initcode()
 {
@@ -43,6 +45,7 @@ Inst *code(Inst f) /* install one instruction or operand */
 
 void execute(Inst *p)
 {
+    /* simple_print_machine(); */
     for (pc = p; *pc != STOP; )
         (*(*pc++))();
 }
@@ -290,4 +293,17 @@ void prexpr() /* print numeric value */
     Datum d;
     d = pop();
     printf("%.8g\n", d.val);
+}
+
+/* print the machine and the address of each instruction,
+ * but don't do any fancy recognition.
+ */
+void simple_print_machine()
+{
+    Inst *loop_progp;
+    size_t ct = 0;
+    for (loop_progp = prog; loop_progp != progp; ++loop_progp) {
+        ct++;
+        fprintf(stderr, "%4u %8x %10x\n", ct, loop_progp, *loop_progp);
+    }
 }

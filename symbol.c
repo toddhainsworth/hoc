@@ -4,6 +4,20 @@
 
 static Symbol *symlist = 0; /* symbol table; linked list */
 
+/* for printing out symbol table (debug) */
+#include <stdio.h>
+#include "y.tab.h"
+void print_symbol_table()
+{
+    Symbol *sp;
+    for (sp = symlist; sp != (Symbol *) 0; sp = sp->next) {
+        fprintf(stderr, "%10s", sp->name);
+        if (sp->type == VAR)
+            fprintf(stderr, " % 12.8f", sp->u.val);
+        fputc('\n', stderr);
+    }
+}
+
 Symbol *lookup(char *s, size_t n)
 {
     Symbol *sp;
@@ -14,7 +28,7 @@ Symbol *lookup(char *s, size_t n)
 }
 
 /* check return from malloc */
-char *emalloc(unsigned int n)
+char *emalloc(size_t n)
 {
     char *p;
 
