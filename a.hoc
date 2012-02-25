@@ -30,13 +30,14 @@ if (b == 8) { print 10 }
 if (b == 8) {
     print 11
 }
-while (b > 0) {
-    print b ^2
-    b = b - 1
-}
+print 1111
 c = 2
 if ( c != 2 ) {
     print -100
 } else {
     print 100
+}
+while (b > 0) {
+    print b ^2
+    b = b - 1
 }

@@ -8,6 +8,8 @@ typedef struct Symbol { /* symbol table entry */
     union {
         double val;     /* if VAR */
         double (*ptr)(double); /* if BLTIN */
+        double (*defn)(); /* FUNCTION, PROCEDURE */
+        char *str; /* STRING */
         /*
         double (*ptr0)();
         double (*ptr2)(double, double);
@@ -23,7 +25,7 @@ typedef union Datum { /* interpreter stack type */
     Symbol *sym;
 } Datum;
 extern Datum pop();
-typedef int (*Inst)(); /* machine instruction */
+typedef size_t (*Inst)(); /* machine instruction */
 #define STOP (Inst) 0
 extern Inst prog[], *progp, *code();
 extern void eval(), print(), prexpr();
@@ -33,6 +35,8 @@ extern void negate(), power(), assign(), bltin();
 extern void varpush(), constpush();
 extern void gt(), lt(), eq(), ge(), le(), ne(), and(), or(), not();
 extern void ifcode(), whilecode();
+extern void argassign(), procret(), funcret(), arg(), varread(), prstr(), call();
+extern void defn(Symbol *s);
 
 Inst *code();
 

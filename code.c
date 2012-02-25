@@ -11,6 +11,18 @@ static Datum *stackp; /* next free spot on stack */
 Inst prog[NPROG]; /* the machine */
 Inst *progp; /* the next free spot on the machine */
 Inst *pc; /* program counter during execution */
+Inst *progbase = prog; /* start of current subprogram */
+int returning; /* 1 if return stmt seen */
+
+typedef struct Frame { /* proc/func call stack frame */
+    Symbol *sp; /* symbol table entry */
+    Inst *retpc; /* where to resume after return */
+    Datum *argn; /* nth argument on stack */
+    size_t nargs; /* number of arguments */
+} Frame;
+#define NFRAME 100
+Frame frame[NFRAME];
+Frame *fp; /* frame pointer */
 
 void simple_print_machine();
 
@@ -18,6 +30,8 @@ void initcode()
 {
     stackp = stack;
     progp = prog;
+    fp = frame;
+    returning = 0;
 }
 
 void push(Datum d) /* push d onto stack */
@@ -45,9 +59,8 @@ Inst *code(Inst f) /* install one instruction or operand */
 
 void execute(Inst *p)
 {
-    /* simple_print_machine(); */
-    for (pc = p; *pc != STOP; )
-        (*(*pc++))();
+    for (pc = p; *pc != STOP && !returning; )
+        (*((++pc)[-1]))();
 }
 
 void constpush() /* push constant onto stack */
@@ -259,33 +272,39 @@ void not()
     push(d);
 }
 
-void whilecode()
+void
+whilecode()
 {
     Datum d;
-    Inst *savepc = pc; /* loop body */
+    Inst *savepc = pc;
 
-    execute(savepc + 2);
+    execute(savepc+2);  /* condition */
     d = pop();
     while (d.val) {
-        execute(*((Inst **) (savepc))); /* body */
-        execute(savepc + 2);
+        execute(*((Inst **)(savepc)));  /* body */
+        if (returning)
+            break;
+        execute(savepc+2);	/* condition */
         d = pop();
     }
-    pc = *((Inst **) (savepc + 1)); /* next statement */
+    if (!returning)
+        pc = *((Inst **)(savepc+2)); /* next stmt */
 }
+
 
 void ifcode()
 {
     Datum d;
-    Inst *savepc = pc; /* then part */
+    Inst *savepc = pc; /* "then" part */
 
     execute(savepc + 3); /* condition */
     d = pop();
     if (d.val)
         execute(*((Inst **) (savepc)));
-    else if (*((Inst **) (savepc + 1))) /* else part ? */
+    else if (*((Inst **) (savepc + 1))) /* else part? */
         execute(*((Inst **) (savepc + 1)));
-    pc = *((Inst **) (savepc + 2)); /* next stmt */
+    if (!returning)
+        pc = *((Inst **) (savepc + 2)); /* next stmt */
 }
 
 void prexpr() /* print numeric value */
@@ -304,6 +323,104 @@ void simple_print_machine()
     size_t ct = 0;
     for (loop_progp = prog; loop_progp != progp; ++loop_progp) {
         ct++;
-        fprintf(stderr, "%4u %8x %10x\n", ct, loop_progp, *loop_progp);
+        fprintf(stderr, "%4lx %8lx %10lx\n", ct, loop_progp, *loop_progp);
     }
+}
+
+void defn(Symbol *sp) /* put func/proc in symbol table */
+{
+    sp->u.defn = (Inst) progbase; /* start of code */
+    progbase = progp;
+}
+
+void call() /* call a function */
+{
+    Symbol *sp = (Symbol *) pc[0]; /* symbol table entry for function */
+    if (fp++ >= &frame[NFRAME-1])
+        execerror(sp->name, "call nested too deeply");
+    fp->sp = sp;
+    fp->nargs = (size_t) pc[1];
+    fp->retpc = pc + 2;
+    fp->argn = stackp - 1; /* last argument */
+    execute(sp->u.defn);
+    returning = 0;
+}
+
+void ret()
+{
+    size_t i;
+    for (i = 0; i < fp->nargs; i++)
+        pop();
+    pc = (Inst *) fp->retpc;
+    --fp;
+    returning = 1;
+}
+
+void funcret()
+{
+    Datum d;
+    if (fp->sp->type == PROCEDURE)
+        execerror(fp->sp->name, "(proc) returns value");
+    d = pop(); /* preserve function return value */
+    ret();
+    push(d);
+}
+
+void procret()
+{
+    if (fp->sp->type == FUNCTION)
+        execerror(fp->sp->name, "(func) returns no value");
+    ret();
+}
+
+double *getarg()
+{
+    size_t nargs = (size_t) *pc++;
+    if (nargs > fp->nargs)
+        execerror(fp->sp->name, "not enough arguments");
+    return &fp->argn[nargs - fp->nargs].val;
+}
+
+void arg() /* push argument onto stack */
+{
+    Datum d;
+    d.val = *getarg();
+    push(d);
+}
+
+void argassign()
+{
+    Datum d;
+    d = pop();
+    push(d);
+    *getarg() = d.val;
+}
+
+void prstr() /* print string value */
+{
+    printf("%s", (char *) *pc++);
+}
+
+void varread() /* read into variable */
+{
+    Datum d;
+    extern FILE *yyin; /* yyin? */
+    Symbol *var = (Symbol *) *pc++;
+
+ Again:
+    switch (fscanf(yyin, "%lf", &var->u.val)) { /* yyin? */
+        case EOF:
+            if (0) /* moreinput()) */
+                goto Again;
+            d.val = var->u.val = 0.0;
+            break;
+        case 0:
+            execerror("non-number read into", var->name);
+            break;
+        default:
+            d.val = 1.0;
+            break;
+    }
+    var->type = VAR;
+    push(d);
 }

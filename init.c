@@ -31,7 +31,7 @@ static struct {
     {"sqrt",  Sqrt},
     {"int",   integer},
     {"abs",   fabs},
-    {"debug",   print_symbol_table},
+    {"debug", print_symbol_table},
     /* terrible abuse of C's generosity
     {"rand", drand48},
     {"atan2", atan2},

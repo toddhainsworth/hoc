@@ -1,6 +1,7 @@
 %{
 #include "hoc.h"
 #include <stdio.h>
+#include <string.h>
 #include <math.h> /* fmod() */
 #define MAX_VAR_NAME_LENGTH 100
 #define code2(c1, c2) code(c1); code(c2)
@@ -15,6 +16,11 @@ int warning(char *s, char *t);
 int follow(char expect, int ifyes, int ifno);
 static void fpecatch(int f);
 static void interrupt_catch(int f);
+void defnonly(char *s);
+int follow(char expect, int ifyes, int ifno);
+
+int backslash(int c);
+int indef = 0;
 
 %}
 
@@ -23,10 +29,17 @@ static void interrupt_catch(int f);
 %union {
     Symbol *sym; /* symbol table pointer */
     Inst *inst; /* (stack) machine instruction */
+    int narg; /* number of arguments */
 }
 
-%token <sym> NUMBER PRINT VAR BLTIN UNDEF WHILE IF ELSE
+%token <sym> NUMBER STRING PRINT VAR BLTIN UNDEF WHILE IF ELSE
+%token <sym> FUNCTION PROCEDURE RETURN FUNC PROC READ
+%token <narg> ARG
 %type <inst> stmt asgn expr stmtlist cond while if end
+%type <inst> begin prlist
+%type <sym> procname
+%type <narg> arglist
+
 %right '='
 %left OR
 %left AND
@@ -41,6 +54,7 @@ static void interrupt_catch(int f);
 
 list:     /* nothing */
         | list '\n'
+        | list defn '\n'
         | list asgn '\n' { code2(pop, STOP); return 1; }
         | list stmt '\n' { code(STOP); return 1; }
         | list expr '\n' { code2(print, STOP); return 1; }
@@ -66,10 +80,20 @@ asgn:    VAR '=' expr { $$ = $3;
                         code3(varpush, (Inst) $1, assign);
                     }
                 }
+        | ARG '=' expr { defnonly("$"); code(argassign);
+                                        code((Inst) $1);
+                                        code(assign);
+                                        $$ = $3; }
         ;
 
 stmt:     expr { code(pop); }
-        | PRINT expr { code(prexpr); $$ = $2; }
+        | RETURN { defnonly("return"); code(procret); }
+        | RETURN expr { defnonly("return"); $$ = $2; code(funcret); }
+        | PROCEDURE begin '(' arglist ')' { $$ = $2; code(call);
+                                                     code((Inst)$1);
+                                                     code((Inst)$4); }
+        /* | PRINT expr { code(prexpr); $$ = $2; } */
+        | PRINT prlist { $$ = $2; }
         | while cond stmt end {
                 ($1)[1] = (Inst) $3; /* body of loop */
                 ($1)[2] = (Inst) $4; /* end, if cond fails */
@@ -105,7 +129,13 @@ stmtlist: /* nothing */ { $$ = progp; }
 
 expr:     NUMBER { $$ = code2(constpush, (Inst) $1); }
         | VAR { $$ = code3(varpush, (Inst) $1, eval); }
+        | ARG { defnonly("$"); $$ = code(arg);
+                                    code((Inst)$1); }
         | asgn
+        | FUNCTION begin '(' arglist ')' { $$ = $2; code(call);
+                                                    code((Inst) $1);
+                                                    code((Inst) $4); }
+        | READ '(' VAR ')' { $$ = code2(varread, (Inst) $3); }
         /* cheap hack to get 0 and 2 argument fns
         | BLTIN '(' ')' { $$ = (*($1->u.ptr0))(); }
         | BLTIN '(' expr ',' expr ')' { $$ = (*($1->u.ptr2))($3, $5); }
@@ -134,6 +164,31 @@ expr:     NUMBER { $$ = code2(constpush, (Inst) $1); }
         */
         ;
 
+begin:    /* nothing */ { $$ = progp; }
+        ;
+
+prlist:   expr { code(prexpr); }
+        | STRING { $$ = code2(prstr, (Inst) $1); }
+        | prlist ',' expr { code(prexpr); }
+        | prlist ',' STRING { code2(prstr, (Inst) $3); }
+        ;
+
+defn:     FUNC procname { $2->type = FUNCTION; indef = 1; }
+            '(' ')' stmt { code(procret); defn($2); indef = 0; }
+        | PROC procname { $2->type = PROCEDURE; indef = 1; }
+            '(' ')' stmt { code(procret); defn($2); indef = 0; }
+        ;
+
+procname: VAR
+        | FUNCTION
+        | PROCEDURE
+        ;
+
+arglist:  /* nothing */ { $$ = 0; }
+        | expr { $$ = 1; }
+        | arglist ',' expr { $$ = $1 + 1; }
+        ;
+
 %%
 /* end of grammar */
 #include <ctype.h> /* isdigit(), isalpha(), isalnum */
@@ -148,7 +203,6 @@ FILE *yyin;
 
 int main(int argc, char **argv)
 {
-
     FILE *fp;
     progname = argv[0];
     fp = stdin;
@@ -198,6 +252,12 @@ static void interrupt_catch(int f)
     execerror("BREAK!", (char *) 0);
 }
 
+void defnonly(char *s)
+{
+    if (!indef)
+        execerror(s, "used outside definition");
+}
+
 int yylex() /* int argc, char *argv[]) */
 {
     int c;
@@ -229,6 +289,36 @@ int yylex() /* int argc, char *argv[]) */
         return s->type == UNDEF ? VAR : s->type;
     }
 
+    if (c == '$') { /* argument? */
+        int n = 0;
+        while (isdigit(c=getc(yyin)))
+            n = 10 * n + c - '0';
+        ungetc(c, yyin);
+        if (n == 0)
+            execerror("strange $...", (char *) 0);
+        yylval.narg = n;
+        return ARG;
+    }
+
+    if (c == '"') { /* quoted string */
+        char sbuf[100];
+        char *p;
+        char *emalloc();
+        for (p = sbuf; (c = getc(yyin)) != '"'; p++) {
+            if (c == '\n' || c == EOF)
+                execerror("missing quote", "");
+            if (p >= sbuf + sizeof(sbuf) - 1) {
+                *p = '\0';
+                execerror("string too long", sbuf);
+            }
+            *p = backslash(c);
+        }
+        *p = 0;
+        yylval.sym = (Symbol *) emalloc(strlen(sbuf) + 1);
+        strcpy(yylval.sym, sbuf);
+        return STRING;
+    }
+
     switch (c) {
         case '>': return follow('=', GE, GT);
         case '<': return follow('=', LE, LT);
@@ -239,6 +329,18 @@ int yylex() /* int argc, char *argv[]) */
         case '\n': lineno++; return '\n';
         default:  return c;
     }
+}
+
+int backslash(int c)
+{
+    char *index(); /* 'strchr()' in some systems */
+    static char transtab[] = "b\bf\fn\nr\rt\t";
+    if (c != '\\')
+        return c;
+    c = getc(yyin);
+    if (islower(c) && index(transtab, c))
+        return index(transtab, c)[1];
+    return c;
 }
 
 int follow(char expect, int ifyes, int ifno) /* look ahead for >=, etc. */

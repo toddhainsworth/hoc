@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra
+CFLAGS=-g -Wall -Wextra
 YFLAGS=-d
 OBJ=hoc.o code.o math.o init.o symbol.o
 
